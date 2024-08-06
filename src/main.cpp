@@ -15,14 +15,14 @@ int main() {
     calibrator.loadCalibrationDataPublic();
 
     // Create TensorRT builder and network
-    auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(gLogger_));
+    nvinfer1::IBuilder *builder = nvinfer1::createInferBuilder(gLogger_);
     initLibNvInferPlugins(&gLogger_, "");
 
     uint32_t flag = 1U <<static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-    auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(flag));
+    nvinfer1::INetworkDefinition *network = builder->createNetworkV2(flag);
 
     // Parse ONNX model
-    auto parser = std::unique_ptr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, gLogger_));
+    nvonnxparser::IParser *parser = nvonnxparser::createParser(*network, gLogger_);
     parser->parseFromFile(calibrator.getPathToONNX(), static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));  
 
     // Create optimization profile
@@ -32,7 +32,7 @@ int main() {
     profile->setDimensions(calibrator.getInputName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, calibrator.getInputSize(), calibrator.getInputSize()});
 
     // Create builder config
-    auto config = std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
+    nvinfer1::IBuilderConfig *config = builder->createBuilderConfig();
     config->addOptimizationProfile(profile);
     // size_t workspace_size = (1ULL << 30);
     // config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, workspace_size);
@@ -43,7 +43,7 @@ int main() {
     config->setInt8Calibrator(&calibrator);
 
     // Build engine
-    auto engine = std::unique_ptr<nvinfer1::IHostMemory>(builder->buildSerializedNetwork(*network, *config));
+    nvinfer1::IHostMemory *engine = builder->buildSerializedNetwork(*network, *config);
 
     std::ofstream engine_file("../engine/test.engine", std::ios::binary);
     assert(engine_file.is_open() && "Failed to open engine file");
@@ -51,9 +51,16 @@ int main() {
     engine_file.close();
 
     // Clean up
-    // delete engine;
-    // delete network;
-    // delete builder;
+    delete engine;
+    delete network;
+    delete builder;
+    
+    /// Backup code
+    // auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(gLogger_));
+    // auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(flag));
+    // auto parser = std::unique_ptr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, gLogger_));
+    // auto config = std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
+    // auto engine = std::unique_ptr<nvinfer1::IHostMemory>(builder->buildSerializedNetwork(*network, *config));    
 
     return 0;
 }
