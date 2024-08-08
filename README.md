@@ -24,49 +24,48 @@ num_dets, boxes, scores, labels.
 1. path to ONNX model
 
 ```cpp
-/// path to ONNX model
-const char* pathToONNX = "../onnx_model/yolov8m.onnx";
+parser->parseFromFile("../onnx_model/yolov8m.onnx", static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));
 ```
 
-2. batchSize, inputSize and name of input node in model
+2. batch size, input size and name of input node in model
 
 ```cpp
-int batchSize_ = 6;
-int currentBatch_ = 0;
-int inputSize = 640;
-const char * inputName = "images";
+Int8EntropyCalibrator calibrator(
+    12, // batch size for calibration 
+    sizeList, // sizes of Dims
+    network->getInput(0)->getDimensions().d[2], // input_w_
+    network->getInput(0)->getDimensions().d[3], // input_h_
+    calibrationImagesDir, // img_dir with images for calibration
+    cacheFile, // name of cache file
+    network->getInput(0)->getName() // image of input tensor
+);
 ```
 
 3. working with your input and outputs.
 
 ```cpp
-/// For allocating memory (input and outputs in EfficientNMS)
+/// For allocating memory (1 input and 4 outputs in EfficientNMS)
 void *buffers_[5];
-float *input_ = new float[batchSize_ * 3 * inputSize * inputSize * sizeof(float)];      //  input (dynamic_batch x 3 x 512 x 512)
-int *output0_ = new int[batchSize_ * sizeof(int)];                                      //  num_dets
-float *output1_ = new float[batchSize_ * 4 * sizeof(float)];                            //  bboxes
-float *output2_ = new float[batchSize_ * sizeof(float)];                                //  scores
-int *output3_ = new int[batchSize_ * sizeof(int)];                                      //  labels
 ```
 
 4. paths to calibration data (`data.txt`, which contains the paths to the images - about 1000+ photos from train dataset) and where you want to save a `calibration_data.cache`
 
 ```cpp
-std::string calibrationDataPath = "../data/data.txt";
-std::string cacheFile = "./calibration_data.cache";
+const char* calibrationImagesDir = "../data";
+const char* cacheFile = "calibration_data.cache";
 ```
 
 5. change a parameters for dynamic batch
 
 ```cpp
-profile->setDimensions(calibrator.getInputName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, calibrator.getInputSize(), calibrator.getInputSize()});
-profile->setDimensions(calibrator.getInputName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4{6, 3, calibrator.getInputSize(), calibrator.getInputSize()});
-profile->setDimensions(calibrator.getInputName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, calibrator.getInputSize(), calibrator.getInputSize()});
+profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
+profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4{6, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
+profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
 ```
 
 6. path where you want to save engine
 
 ```cpp
-std::ofstream engine_file("../engine/test.engine", std::ios::binary);
+std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
 ```
 
