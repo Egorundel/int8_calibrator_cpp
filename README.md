@@ -1,8 +1,6 @@
 # int8_calibrator_cpp
 INT8 calibrator for ONNX model with dynamic batch_size at the input and NMS module at the output.
 
-## **IN PROGRESS...**
-
 I am creating an INT8 calibrator in C++. I calibrate the ONNX model, generate the `calibration_data.cache` calibration file, and then create the TensorRT Engine using calibration.
 
 I am using the ONNX model with a dynamic batch size at the input. 
@@ -23,49 +21,44 @@ num_dets, boxes, scores, labels.
 
 1. path to ONNX model
 
-```cpp
-parser->parseFromFile("../onnx_model/yolov8m.onnx", static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));
-```
+   ```cpp
+   parser->parseFromFile("../onnx_model/yolov8m.onnx", static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));
+   ```
 
 2. batch size, input size and name of input node in model
 
-```cpp
-Int8EntropyCalibrator calibrator(
-    12, // batch size for calibration 
-    sizeList, // sizes of Dims
-    network->getInput(0)->getDimensions().d[2], // input_w_
-    network->getInput(0)->getDimensions().d[3], // input_h_
-    calibrationImagesDir, // img_dir with images for calibration
-    cacheFile, // name of cache file
-    network->getInput(0)->getName() // image of input tensor
-);
-```
+   ```cpp
+   Int8EntropyCalibrator calibrator(
+       12, // batch size for calibration 
+       sizeList, // sizes of Dims
+       network->getInput(0)->getDimensions().d[2], // input_w_
+       network->getInput(0)->getDimensions().d[3], // input_h_
+       calibrationImagesDir, // img_dir with images for calibration
+       cacheFile, // name of cache file
+       network->getInput(0)->getName() // image of input tensor
+   );
+   ```
 
-3. working with your input and outputs.
+3. paths to calibration data (`data.txt`, which contains the paths to the images - about 1000+ photos from train dataset) and where you want to save a `calibration_data.cache`
 
-```cpp
-/// For allocating memory (1 input and 4 outputs in EfficientNMS)
-void *buffers_[5];
-```
+   ```cpp
+   const char* calibrationImagesDir = "../data";
+   const char* cacheFile = "calibration_data.cache";
+   ```
 
-4. paths to calibration data (`data.txt`, which contains the paths to the images - about 1000+ photos from train dataset) and where you want to save a `calibration_data.cache`
+   
 
-```cpp
-const char* calibrationImagesDir = "../data";
-const char* cacheFile = "calibration_data.cache";
-```
+4. change a parameters for dynamic batch
 
-5. change a parameters for dynamic batch
+   ```cpp
+   profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
+   profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4{6, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
+   profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
+   ```
 
-```cpp
-profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
-profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4{6, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
-profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
-```
+5. path where you want to save engine
 
-6. path where you want to save engine
-
-```cpp
-std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
-```
+   ```cpp
+   std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
+   ```
 

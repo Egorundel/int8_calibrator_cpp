@@ -22,37 +22,50 @@ static inline int read_files_in_dir(const char *p_dir_name, std::vector<std::str
     return 0;
 }
 
-Int8EntropyCalibrator::Int8EntropyCalibrator(int batchsize, std::vector<int> sizebuffers, int input_w, int input_h, const char* img_dir, const char* calib_table_name,
-                                               const char* input_blob_name, bool read_cache)
-    : batchsize_(batchsize)
-    , countbatch_(0)
-    , sizebuffers_(sizebuffers)
-    , input_w_(input_w)
-    , input_h_(input_h)
-    , img_idx_(0)
-    , img_dir_(img_dir)
-    , calib_table_name_(calib_table_name)
-    , input_blob_name_(input_blob_name)
-    , read_cache_(read_cache)
-{
-    device_input_ = new float[batchsize_ * sizebuffers_[0]];
-
-    /// Allocate memory and buffers_ for the input and output tensors
-    for (unsigned int i = 0; i < sizebuffers_.size(); ++i)
-    {
-        CUDA_CHECK(cudaMalloc(&buffers_[i], batchsize_ * sizebuffers_[i] * sizeof(float)));
+static cv::Mat preprocess_img(cv::Mat& img, int input_w, int input_h) {
+    int w, h, x, y;
+    float r_w = input_w / (img.cols * 1.0);
+    float r_h = input_h / (img.rows * 1.0);
+    if (r_h > r_w) {
+        w = input_w;
+        h = r_w * img.rows;
+        x = 0;
+        y = (input_h - h) / 2;
+    } else {
+        w = r_h * img.cols;
+        h = input_h;
+        x = (input_w - w) / 2;
+        y = 0;
     }
+    cv::Mat re(h, w, CV_8UC3);
+    cv::resize(img, re, re.size(), 0, 0, cv::INTER_LINEAR);
+    // cv::Mat out(input_h, input_w, CV_8UC3, cv::Scalar(128, 128, 128));
+    cv::Mat out(input_h, input_w, CV_8UC3, cv::Scalar(114, 114, 114));
+    re.copyTo(out(cv::Rect(x, y, re.cols, re.rows)));
+    return out;
+}
+
+Int8EntropyCalibrator::Int8EntropyCalibrator(int batchsize, std::vector<int> sizebuffers, int input_w, int input_h, const char* img_dir, const char* calib_cache_name,
+                                               const char* input_blob_name, bool read_cache): 
+                                               batchsize_(batchsize),
+                                               sizebuffers_(sizebuffers),
+                                               input_w_(input_w),
+                                               input_h_(input_h),
+                                               img_idx_(0),
+                                               img_dir_(img_dir),
+                                               calib_cache_name_(calib_cache_name),
+                                               input_blob_name_(input_blob_name),
+                                               read_cache_(read_cache)
+{
+    buffer_ = new float[batchsize_ * sizebuffers_[0]];
+    CUDA_CHECK(cudaMalloc(&device_input_, batchsize_ * sizebuffers_[0] * sizeof(float)));
     
     read_files_in_dir(img_dir, img_files_);
 }
 
 Int8EntropyCalibrator::~Int8EntropyCalibrator()
 {
-    for (unsigned int i = 0; i < sizebuffers_.size(); i++)
-    {
-        CUDA_CHECK(cudaFree(buffers_[i]));
-    }
-    delete[] device_input_;
+    CUDA_CHECK(cudaFree(device_input_));
 }
 
 int Int8EntropyCalibrator::getBatchSize() const noexcept
@@ -60,49 +73,36 @@ int Int8EntropyCalibrator::getBatchSize() const noexcept
     return batchsize_;
 }
 
-bool Int8EntropyCalibrator::getBatch(void* bindings[], const char* names[], int nbBindings) noexcept
-{
-    clock_t start = 0, end = 0;
-    
+bool Int8EntropyCalibrator::getBatch(void* bindings[], const char* names[], int nbBindings) noexcept {
     if (img_idx_ + batchsize_ > (int)img_files_.size()) {
         return false;
     }
 
     std::vector<cv::Mat> input_imgs_;
     for (int i = img_idx_; i < img_idx_ + batchsize_; i++) {
-        
         // std::cout << img_files_[i] << "  " << i << std::endl;
-        start = clock();
         cv::Mat temp = cv::imread(img_dir_ + img_files_[i]);
-        if (temp.empty()){
+        if (temp.empty()) {
             std::cerr << "Fatal error: image cannot open!" << std::endl;
             return false;
         }
-        cv::Mat LetterBoxImg;
-        cv::Vec4d params;
-	    LetterBox(temp, LetterBoxImg, params, cv::Size(input_w_, input_h_));
-        input_imgs_.push_back(LetterBoxImg);  
-        end = clock();
+        cv::Mat pr_img = preprocess_img(temp, input_w_, input_h_);
+        input_imgs_.push_back(pr_img);
     }
-    std::cout << "Calibrated batch " << countbatch_ << " in " << ((double)(end-start)/CLOCKS_PER_SEC) * 1000 << " seconds" << std::endl;
-    countbatch_ += 1;
     img_idx_ += batchsize_;
-    
-    CUDA_CHECK(cudaMemcpy(buffers_[0], device_input_, batchsize_ * sizebuffers_[0] * sizeof(float), cudaMemcpyHostToDevice));
-    
-    // assert(!strcmp(names[0], input_blob_name_));
-    // bindings[0] = device_input_;
-    bindings[0] = buffers_[0];
+    cv::Mat blob = cv::dnn::blobFromImages(input_imgs_, 1.0 / 255.0, cv::Size(input_w_, input_h_), cv::Scalar(0, 0, 0),
+                                           true, false);
+
+    CUDA_CHECK(cudaMemcpy(device_input_, blob.ptr<float>(0), batchsize_ * sizebuffers_[0] * sizeof(float), cudaMemcpyHostToDevice));
+    assert(!strcmp(names[0], input_blob_name_));
+    bindings[0] = device_input_;
     return true;
 }
 
 const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length) noexcept
 {
-    std::cout << "READING CALIB CACHE" << std::endl;
-    std::cout << "‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾" << std::endl;
-    std::cout << calib_table_name_ << std::endl;
     calib_cache_.clear();
-    std::ifstream input(calib_table_name_, std::ios::binary);
+    std::ifstream input(calib_cache_name_, std::ios::binary);
     input >> std::noskipws;
     if (read_cache_ && input.good())
     {
@@ -122,13 +122,11 @@ const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length) noexcept
 
 void Int8EntropyCalibrator::writeCalibrationCache(const void* cache, size_t length) noexcept
 {
-    std::cout << "WRITING CALIB CACHE" << std::endl;
-    std::cout << "‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾" << std::endl;
-    std::cout << calib_table_name_ << " size: " << length << std::endl;
+    std::cout << "Size of calibration file \"" << calib_cache_name_ << "\": " << length << std::endl;
 
-    assert(!calib_table_name_.empty());
-    std::ofstream output(calib_table_name_, std::ios::binary);
-    // output.write(reinterpret_cast<const char*>(cache), length);
-    output.write((const char*)cache, length);
+    assert(!calib_cache_name_.empty());
+    std::ofstream output(calib_cache_name_, std::ios::binary);
+    output.write(reinterpret_cast<const char*>(cache), length);
+    // output.write((const char*)cache, length);
     output.close();
 }

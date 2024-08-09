@@ -4,27 +4,12 @@
 #include <vector>
 #include <string>
 
-class Logger : public nvinfer1::ILogger           
-{
-    void log(Severity severity, const char* msg) noexcept override
-    {
-        /*
-        Display ONLY errors (warnings will not be displayed).
-        If you want warnings to be displayed, replace kERROR with kWARNING
-        */
-        if (severity <= Severity::kWARNING)
-            std::cout << msg << std::endl;
-    }
-};
-
 int main() {
 
     Logger logger;
 
-
-    const char* calibrationImagesDir = "../data";
-    const char* cacheFile = "calibration_data.cache";
-
+    const char* calibrationImagesDir = "../data/";
+    const char* cacheFile = "./calibration_data.cache";
 
     // Create TensorRT builder and network
     nvinfer1::IBuilder *builder = nvinfer1::createInferBuilder(logger);
@@ -51,19 +36,17 @@ int main() {
     profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4{6, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
     profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
 
-
     // Create builder config
     nvinfer1::IBuilderConfig *config = builder->createBuilderConfig();
     config->addOptimizationProfile(profile);
-    // size_t workspace_size = (1ULL << 30);
-    // config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, workspace_size);
+    size_t workspace_size = (1ULL << 30);
+    config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, workspace_size);
     // config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, 1U << 20);
-
 
     // Set INT8 mode and calibrator
     config->setFlag(nvinfer1::BuilderFlag::kINT8);
     Int8EntropyCalibrator calibrator(
-        12, 
+        6, 
         sizeList,
         network->getInput(0)->getDimensions().d[2], 
         network->getInput(0)->getDimensions().d[3], 
@@ -90,6 +73,8 @@ int main() {
 
     // Clean up
     delete engine;
+    delete config;
+    delete parser;
     delete network;
     delete builder;
 
