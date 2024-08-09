@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(TensorRTCalibrator)
+project(int8_calibrator_cpp)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 14)
@@ -42,10 +42,10 @@ file(GLOB My_Source_Files ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB My_Include_Files ${PROJECT_SOURCE_DIR}/include/*.h)
 
 # Add executable
-add_executable(TensorRTCalibrator ${My_Source_Files} ${My_Include_Files})
+add_executable(int8_calibrator_cpp ${My_Source_Files} ${My_Include_Files})
 
 # Include directories
-target_include_directories(TensorRTCalibrator PUBLIC 
+target_include_directories(int8_calibrator_cpp PUBLIC 
     ${PROJECT_SOURCE_DIR}/include 
     ${OpenCV_INCLUDE_DIRS} 
     ${CUDA_INCLUDE_DIRS}
@@ -54,7 +54,7 @@ target_include_directories(TensorRTCalibrator PUBLIC
 )
 
 # Link libraries
-target_link_libraries(TensorRTCalibrator PUBLIC 
+target_link_libraries(int8_calibrator_cpp PUBLIC 
     ${OpenCV_LIBS} 
     ${CUDA_LIBRARIES} 
     ${CMAKE_THREAD_LIBS_INIT}
