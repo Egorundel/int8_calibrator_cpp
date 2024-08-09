@@ -76,3 +76,12 @@ num_dets, boxes, scores, labels.
    std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
    ```
 
+
+
+Tested on:  
+
+**TensorRT Version**: 8.6.1.6  
+**NVIDIA GPU**: RTX 3060  
+**NVIDIA Driver Version**: 555.42.02  
+**CUDA Version**: 11.1  
+**CUDNN Version**:  8.0.6  
