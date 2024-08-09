@@ -5,8 +5,20 @@ I am creating an INT8 calibrator in C++. I calibrate the ONNX model, generate th
 
 I am using the ONNX model with a dynamic batch size at the input. 
 
+### <span style="color:red">ATTENTION!</span>
+
+Pay attention to your model input. 
+This calibrator is suitable for models with input format: **batch_size * number_of_channels * width * height**.
+
 **The input of our model has the following parameters:**
 dynamic batch size * 3 * 640 * 640
+
+**batch_size** = -1 (dynamic)
+**number_of_channels** = 3
+**width** = 640
+**height** = 640
+
+
 
 ![input](./images/input.png)
 
