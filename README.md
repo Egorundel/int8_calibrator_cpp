@@ -13,10 +13,10 @@ This calibrator is suitable for models with input format: **batch_size * number_
 **The input of our model has the following parameters:**
 dynamic batch size * 3 * 640 * 640
 
-**batch_size** = -1 (dynamic)
-**number_of_channels** = 3
-**width** = 640
-**height** = 640
+**batch_size** = -1 (dynamic)  
+**number_of_channels** = 3  
+**width** = 640  
+**height** = 640  
 
 
 
