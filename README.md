@@ -1,7 +1,7 @@
 # int8_calibrator_cpp
 INT8 calibrator for ONNX model with dynamic batch_size at the input and NMS module at the output.
 
-I am creating an INT8 calibrator in C++. I calibrate the ONNX model, generate the `calibration_data.cache` calibration file, and then create the TensorRT Engine using calibration.
+I am creating an INT8 calibrator in C++. Used `nvinfer1::IInt8EntropyCalibrator2`. I calibrate the ONNX model, generate the `calibration_data.cache` calibration file, and then create the TensorRT Engine using calibration.
 
 I am using the ONNX model with a dynamic batch size at the input. 
 
@@ -31,7 +31,7 @@ num_dets, boxes, scores, labels.
 
 
 
-#### What you need to change in code for you?
+### What you need to change in code for you?
 
 1. path to ONNX model
 
@@ -76,9 +76,11 @@ num_dets, boxes, scores, labels.
    std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
    ```
 
+### **Screenshot of working code:**
 
+![screenshot_of_working_code](./images/screenshot_of_working_code.png)
 
-Tested on:  
+### Tested on:  
 
 **TensorRT Version**: 8.6.1.6  
 **NVIDIA GPU**: RTX 3060  
