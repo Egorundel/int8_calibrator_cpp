@@ -10,6 +10,8 @@ I am using the ONNX model with a dynamic batch size at the input.
 Pay attention to your model input. 
 This calibrator is suitable for models with input format: **batch_size * number_of_channels * width * height**.
 
+To view what is at the input and output of your model, use the service: [Netron](https://netron.app)
+
 **The input of our model has the following parameters:**
 dynamic batch size * 3 * 640 * 640
 
