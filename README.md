@@ -1,4 +1,4 @@
-# int8_calibrator_cpp
+# INT8 Calibrator (C++ Implementation)
 
 ## Description  
 
