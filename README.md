@@ -1,6 +1,6 @@
 # int8_calibrator_cpp
 
-### Description  
+## Description  
 
 INT8 calibrator for ONNX model with dynamic batch_size at the input and NMS module at the output.
 
@@ -34,7 +34,7 @@ num_dets, boxes, scores, labels.
 
 
 
-### What you need to change in code for you?
+## What you need to change in code for you?
 
 1. path to ONNX model
 
@@ -79,7 +79,7 @@ num_dets, boxes, scores, labels.
    std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
    ```
 
-### How to launch?
+## How to launch?
 
 ```shell
 # download repository
@@ -103,7 +103,7 @@ make -j$(nproc)
 ./int8_calibrator_cpp
 ```
 
-### **Screenshot of work:**
+## **Screenshot of work:**
 
 ![screenshot_of_working_code](./images/screenshot_of_working_code.png)
 
