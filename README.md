@@ -107,6 +107,10 @@ make -j$(nproc)
 
 ![screenshot_of_working_code](./images/screenshot_of_working_code.png)
 
+## They were used as a basis:
+1. https://github.com/cyberyang123/Learning-TensorRT/tree/main/yolov8_accelerate
+2. https://github.com/wang-xinyu/tensorrtx/tree/master/yolov9
+
 ### Tested on:  
 
 **TensorRT Version**: 8.6.1.6  
