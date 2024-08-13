@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 #include <iterator>
-#include <dirent.h>
 #include <fstream>
 
 #include "auxiliary_utils.h"
@@ -99,9 +98,8 @@ private:
     // the vector of calibration values in the calibration file
     std::vector<char> calib_cache_;
 
-    /// For allocating memory
+    // For allocating memory
     void* device_input_;
-    float* buffer_;
 };
 
 #endif // INT8_ENTROPY_CALIBRATOR_H
