@@ -5,15 +5,15 @@ int main() {
     Logger logger;
 
     const char* calibrationImagesDir = "../data/";
-    const char* cacheFile = "./calibration_data.cache";
-
+    const char* cacheFile = "calibration_data.cache";
+    const char* pathToOnnx = "../onnx_model/yolov8m.onnx";
+    const char* pathToEngine = "./yolov8m.engine";
+    
     /* 
         create TensorRT builder and network
     */
     nvinfer1::IBuilder *builder = nvinfer1::createInferBuilder(logger);
     initLibNvInferPlugins(&logger, "");
-
-
     /*
         for expicit batch:
     */
@@ -30,7 +30,7 @@ int main() {
         parse ONNX model
     */
     nvonnxparser::IParser *parser = nvonnxparser::createParser(*network, logger);
-    parser->parseFromFile("../onnx_model/yolov8m.onnx", static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));
+    parser->parseFromFile(pathToOnnx, static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));
 
     std::vector<int> sizeList = getTensorSizes(network);
     
@@ -48,6 +48,8 @@ int main() {
     nvinfer1::IBuilderConfig *config = builder->createBuilderConfig();
     config->addOptimizationProfile(profile);
 
+    config->setBuilderOptimizationLevel(5);
+
     /* 
         Memory allocation
     */
@@ -63,7 +65,8 @@ int main() {
     /* 
         comment this out if you want to create an engine with ONLY int8 precision.
     */
-    // config->setFlag(nvinfer1::BuilderFlag::kFP16);
+    config->clearFlag(nvinfer1::BuilderFlag::kTF32);
+    config->setFlag(nvinfer1::BuilderFlag::kFP16);
 
     /*
         Set INT8 mode and calibrator
@@ -80,13 +83,14 @@ int main() {
     );
     config->setInt8Calibrator(&calibrator);
 
+    getInfoOfLaunchedCommand(pathToOnnx, pathToEngine, cacheFile, profile, network, config);
 
     /* 
         Build engine
     */
     nvinfer1::IHostMemory *plan = builder->buildSerializedNetwork(*network, *config);
-
-    std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
+    
+    std::ofstream engine_file(pathToEngine, std::ios::binary);
     if (!engine_file)
     {
         std::cout << "write serialized file failed\n";

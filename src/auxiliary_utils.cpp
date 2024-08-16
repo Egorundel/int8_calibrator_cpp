@@ -78,3 +78,64 @@ std::vector<int> getTensorSizes(nvinfer1::INetworkDefinition* network) {
 
     return sizeList;
 }
+
+void getInfoOfLaunchedCommand(const char* pathToOnnx, const char* pathToEngine, const char* cacheFile, nvinfer1::IOptimizationProfile* profile,
+    nvinfer1::INetworkDefinition *network, nvinfer1::IBuilderConfig *config)
+{
+    std::cout << "Начинается создание TensorRT Engine со следующими параметрами:" << std::endl;
+    std::cout << "--onnx=" << pathToOnnx;
+    std::cout << " --saveEngine=" << pathToEngine;
+    std::cout << " --minShapes=";
+
+    std::string minShapes;
+    for (int i = 0; i < profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN).nbDims; ++i) {
+        minShapes += std::to_string(profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN).d[i]);
+        if (i < profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN).nbDims - 1) {
+            minShapes += "x";
+        }
+    }
+    std::cout << minShapes;
+
+    std::cout << " --optShapes=";
+    std::string optShapes;
+    for (int i = 0; i < profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT).nbDims; ++i) {
+        optShapes += std::to_string(profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT).d[i]);
+        if (i < profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kOPT).nbDims - 1) {
+            optShapes += "x";
+        }
+    }
+    std::cout << optShapes;
+
+    std::cout << " --maxShapes=";
+    std::string maxShapes;
+    for (int i = 0; i < profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX).nbDims; ++i) {
+        maxShapes += std::to_string(profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX).d[i]);
+        if (i < profile->getDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX).nbDims - 1) {
+            maxShapes += "x";
+        }
+    }
+    std::cout << maxShapes;
+
+    if (!config->getFlag(nvinfer1::BuilderFlag::kTF32))
+    {
+        std::cout << " --noTF32";
+    }
+
+    if (config->getFlag(nvinfer1::BuilderFlag::kFP16))
+    {
+        std::cout << " --fp16";
+    }
+
+    if (config->getFlag(nvinfer1::BuilderFlag::kINT8))
+    {
+        std::cout << " --int8";
+        std::cout << " --calib=" << cacheFile;
+    }
+
+    if (config->getBuilderOptimizationLevel() != 3)
+    {
+        std::cout << " --builderOptimizationLevel=" << config->getBuilderOptimizationLevel();
+    }
+
+    std::cout << std::endl;
+}

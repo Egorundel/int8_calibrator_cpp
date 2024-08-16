@@ -36,17 +36,17 @@ num_dets, boxes, scores, labels.
 
 ## What you need to change in code for you?
 
-1. path to ONNX model
+1. path to ONNX model (`main.cpp`)
 
    ```cpp
-   parser->parseFromFile("../onnx_model/yolov8m.onnx", static_cast<int32_t>(nvinfer1::ILogger::Severity::kWARNING));
+   const char* pathToOnnx = "../onnx_model/yolov8m.onnx";
    ```
 
-2. batch size, input size and name of input node in model
+2. batch size, input size and name of input node in model (`main.cpp`)
 
    ```cpp
    Int8EntropyCalibrator calibrator(
-       12, // batch size for calibration 
+      	6, // batch size for calibration 
        sizeList, // sizes of Dims
        network->getInput(0)->getDimensions().d[2], // input_w_
        network->getInput(0)->getDimensions().d[3], // input_h_
@@ -56,16 +56,16 @@ num_dets, boxes, scores, labels.
    );
    ```
 
-3. paths to calibration data (`data.txt`, which contains the paths to the images - about 1000+ photos from train dataset) and where you want to save a `calibration_data.cache`
+3. paths to calibration data (`data.txt`, which contains the paths to the images - about 1000+ photos from train dataset) and where you want to save a `calibration_data.cache` (`main.cpp`)
 
    ```cpp
-   const char* calibrationImagesDir = "../data";
+   const char* calibrationImagesDir = "../data/";
    const char* cacheFile = "calibration_data.cache";
    ```
 
    
 
-4. change a parameters for dynamic batch
+4. change a parameters for dynamic batch (`main.cpp`)
 
    ```cpp
    profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
@@ -73,10 +73,10 @@ num_dets, boxes, scores, labels.
    profile->setDimensions(network->getInput(0)->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{12, 3, network->getInput(0)->getDimensions().d[2], network->getInput(0)->getDimensions().d[3]});
    ```
 
-5. path where you want to save engine
+5. path where you want to save engine (`main.cpp`)
 
    ```cpp
-   std::ofstream engine_file("./yolov8m.engine", std::ios::binary);
+   const char* pathToEngine = "./yolov8m.engine";
    ```
 
 ## How to launch?

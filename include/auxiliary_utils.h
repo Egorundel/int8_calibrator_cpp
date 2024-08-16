@@ -8,6 +8,8 @@
 #include <dirent.h>
 
 std::vector<int> getTensorSizes(nvinfer1::INetworkDefinition* network);
+void getInfoOfLaunchedCommand(const char* pathToOnnx, const char* pathToEngine, const char* cacheFile, nvinfer1::IOptimizationProfile* profile, 
+    nvinfer1::INetworkDefinition *network, nvinfer1::IBuilderConfig *config);
 
 static inline cv::Mat preprocess_img(cv::Mat& img, int input_w, int input_h) {
     int w, h, x, y;
