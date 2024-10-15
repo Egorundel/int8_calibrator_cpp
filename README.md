@@ -118,3 +118,13 @@ make -j$(nproc)
 **NVIDIA Driver Version**: 555.42.02  
 **CUDA Version**: 11.1  
 **CUDNN Version**:  8.0.6  
+
+## Star History
+
+<a href="https://star-history.com/#egorundel/int8_calibrator_cpp&Timeline">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=egorundel/int8_calibrator_cpp&type=Timeline&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=egorundel/int8_calibrator_cpp&type=Timeline" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=egorundel/int8_calibrator_cpp&type=Timeline" />
+ </picture>
+</a>
